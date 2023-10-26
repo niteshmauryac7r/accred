@@ -95,6 +95,8 @@ def generate_id_card():
 
     card_image.show()
 
+    ghghgh
+
     # Save the modified image with the name in the center (or specified coordinates)
     card_image.save("id_card_with_name.jpg")
 
