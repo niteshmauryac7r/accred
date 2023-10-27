@@ -43,15 +43,20 @@ def generate_id_card():
     zone = data.get("zone").upper()
     head = data.get("head").upper()
     profilepicture = data.get("picture")
-    food = data.get("food")
+    #food = data.get("food")
+
+    if "food" in data and data["food"] != "":
+        food = data.get("food")
+    else:
+        food = None
 
     # Load the ID card image
     card_image = Image.open("static/card_image/para_games.jpg")
     font_name = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Medium.ttf", size=90)
-    font_title = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Medium.ttf", size=90)
-    font_games = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Medium.ttf", size=90)
-    font_tier = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-ExtraBold.ttf", size=90)
-    font_zone = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-ExtraBold.ttf", size=90)
+    font_title = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Medium.ttf", size=50)
+    font_games = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Medium.ttf", size=110)
+    font_tier = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-ExtraBold.ttf", size=110)
+    font_zone = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-ExtraBold.ttf", size=110)
     font_head = ImageFont.truetype("static/Saira_Condensed/SairaCondensed-Bold.ttf", size=90)
 
     keys_to_encode = ["name", "title", "kitd"]
@@ -61,6 +66,22 @@ def generate_id_card():
     # Create a drawing context
     draw = ImageDraw.Draw(card_image)
 
+    if food is not None:
+        # Decode the Base64 string into an image
+        food_data = base64.b64decode(food)
+        food = Image.open(BytesIO(food_data))
+
+        # Define the coordinates for pasting the profile picture
+        x_food = 510
+        y_food = 2140
+        food_width = 160
+        food_height = 120
+
+        food = food.resize((food_width, food_height))
+
+        # Paste the profile picture onto the ID card image
+        card_image.paste(food, (x_food, y_food))
+
     # Calculate the size of the text
     text_width_name, text_height_name = draw.textsize(name, font_name)
     card_width,card_height = card_image.size
@@ -69,24 +90,24 @@ def generate_id_card():
     y_coordinate_name = 1400
     draw.text((x_coordinate_name, y_coordinate_name), name, fill=(245, 149, 29), font=font_name)
 
-    text_width_title, text_height_title = draw.textsize(title, font_title)
+    text_width_title, text_height_title = draw.textsize(f"HEAD - {title}", font_title)
     x_center_title = (card_width - text_width_title) // 2
     x_title = x_center_title
-    y_title = 1500
-    draw.text((x_title, y_title), title, fill=(0, 0, 0), font=font_title)
+    y_title = 1550
+    draw.text((x_title, y_title), f"HEAD - {title}", fill=(255, 255, 255), font=font_title)
 
     text_width_games, text_height_games = draw.textsize(games, font_games)
     x_center_games = (card_width - text_width_games) // 2
     x_games = x_center_games
-    y_games = 1600
+    y_games = 500
     draw.text((x_games, y_games), games, fill=(255, 255, 255), font=font_games)
 
     x_tier = 800
-    y_tier = 2100
+    y_tier = 2135
     draw.text((x_tier, y_tier), tier, fill=(255, 255, 255), font=font_tier)
 
-    x_zone = 17
-    y_zone = 1750
+    x_zone = 1000
+    y_zone = 2135
     draw.text((x_zone, y_zone), zone, fill=(255, 255, 255), font=font_zone)
 
     x_qrcode = 69
@@ -127,31 +148,26 @@ def generate_id_card():
     y_head = 2360
     draw.text((x_head, y_head), head, fill=(255, 255, 255), font=font_head)
 
-    # Decode the Base64 string into an image
-    food_data = base64.b64decode(food)
-    food = Image.open(BytesIO(food_data))
 
-    # Define the coordinates for pasting the profile picture
-    x_food = 510
-    y_food = 2140
-    food_width = 160
-    food_height = 120
-
-    food = food.resize((food_width, food_height))
-
-    # Paste the profile picture onto the ID card image
-    card_image.paste(food, (x_food, y_food))
 
     card_image.paste(qrcode_image, (x_qrcode, y_qrcode))
 
     card_image.show()
 
+    image_bytesio = BytesIO()
+    card_image.save(image_bytesio, format="JPEG")
+    image_bytesio.seek(0)
 
 
-    # Save the modified image with the name in the center (or specified coordinates)
-    card_image.save("id_card_with_name.jpg")
+    base64_id_card = base64.b64encode(image_bytesio.read()).decode()
 
-    return jsonify({"message": "ID card generated successfully"})
+    # Create the JSON response
+    response_data = {
+        "message": "ID card generated successfully",
+        "id_card_image_base64": base64_id_card
+    }
+
+    return jsonify(response_data)
 
 
 if __name__ == '__main__':
